@@ -26,11 +26,9 @@ async function getImageUrl() {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
         "x-requested-with": "XMLHttpRequest",
       },
-      // Dữ liệu gửi đi được định dạng dưới dạng URL-encoded
       data: "user_name=mm_1740056166961&component=upload&action=list&english_version=0&selected_country=1&selected_chain=0",
     });
 
-    // Kiểm tra dữ liệu trả về và lấy danh sách ảnh
     if (
       response.data &&
       response.data.data &&
@@ -38,12 +36,10 @@ async function getImageUrl() {
     ) {
       const images = response.data.data.list;
       if (Array.isArray(images) && images.length > 0) {
-        // Chọn ngẫu nhiên một ảnh
         const randomIndex = Math.floor(Math.random() * images.length);
         return "https://asset.vcity.app" + images[randomIndex].url;
       }
     }
-    // Nếu không có dữ liệu phù hợp, trả về URL mặc định
     return "https://asset.vcity.app/vfile/2024/11/13/17/1731547067893529571327216841855.jpg";
   } catch (error) {
     console.error("Lỗi khi lấy ảnh:", error);

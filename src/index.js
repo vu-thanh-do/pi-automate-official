@@ -16,10 +16,8 @@ app.set('view engine', 'ejs');
 
 app.use(bodyParser.json());
 
-// Route hiển thị giao diện
 app.get('/', (req, res) => res.render('index'));
 
-// Xử lý tất cả tác vụ song song
 app.post('/execute-tasks', async (req, res) => {
     try {
         const { commentCount, likeCount,deleteCount, postCount, piKnow, likeEachOther } = req.body;
@@ -31,7 +29,6 @@ app.post('/execute-tasks', async (req, res) => {
         if (postCount > 0) tasks.push(handlePostArticles(postCount));
         if (piKnow > 0) tasks.push(handlePiKnow(piKnow));
         if (likeEachOther > 0) tasks.push(handleLikeEachOther(likeEachOther));
-        // Chạy tất cả tác vụ song song, không chờ từng cái một
         const results = await Promise.allSettled(tasks);
         console.log(results)
         const successCount = results.filter(r => r.status === "fulfilled").length;

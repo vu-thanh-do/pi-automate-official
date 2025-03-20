@@ -2,26 +2,20 @@ const axios = require('axios');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const fs = require('fs');
 const path = require('path');
-
-// Đọc config API
 const configPath = path.join(__dirname, '../config.json');
 const config = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, 'utf-8')) : {};
-
-// Tạo Axios instance chung
 const apiClient = (user) => {
     console.log(`>> Tạo API client cho user: ${user.piname}`);
-
     const proxyUrl = `http://${user.proxy.name}:${user.proxy.password}@${user.proxy.host}:${user.proxy.port}`;
     const httpsAgent = new HttpsProxyAgent(proxyUrl);
     
-    // Cấu hình axios với timeout và maxBodyLength để tránh bị treo
     const axiosInstance = axios.create({
         baseURL: 'https://pivoice.app',
         httpsAgent,
-        timeout: 20000, // Timeout 20 giây
-        maxContentLength: 5 * 1024 * 1024, // 5MB max content length
-        maxBodyLength: 5 * 1024 * 1024, // 5MB max body length
-        maxRedirects: 5, // Giới hạn redirect
+        timeout: 20000,
+        maxContentLength: 5 * 1024 * 1024,
+        maxBodyLength: 5 * 1024 * 1024,
+        maxRedirects: 5,
         headers: {
             'Accept': '*/*',
             'Accept-Language': 'vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5',
@@ -40,40 +34,25 @@ const apiClient = (user) => {
             'Sec-Fetch-Site': 'same-origin'
         }
     });
-
-    // Interceptor cho request - thêm requestId để dễ dàng theo dõi
     axiosInstance.interceptors.request.use(config => {
-        // Tạo ID duy nhất cho mỗi request
         config.requestId = `req-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        
         console.log(`>> [${config.requestId}] Gọi API: ${config.baseURL}${config.url || ''}`);
         console.log(`>> [${config.requestId}] Data: ${config.data || 'Không có'}`);
-        
-        // Log curl command tương đương cho debug
         let curlCommand = `curl '${config.baseURL}${config.url || ''}' \\\n`;
-        
-        // Thêm headers
         Object.entries(config.headers).forEach(([key, value]) => {
             if (key.toLowerCase() !== 'common' && value !== undefined) {
                 curlCommand += `  -H '${key}: ${value}' \\\n`;
             }
         });
-        
-        // Thêm data nếu có
         if (config.data) {
             curlCommand += `  --data-raw '${config.data}'`;
         }
-        
-        // Log lệnh curl ngắn gọn
-        console.log(`>> [${config.requestId}] Curl tương đương: ${curlCommand.substring(0, 150)}...`);
-        
         return config;
     }, error => {
         console.error(`❌ Lỗi khi gửi request: ${error.message}`);
         return Promise.reject(error);
     });
-    
-    // Interceptor cho response
+
     axiosInstance.interceptors.response.use(response => {
         if (response.config && response.config.requestId) {
             console.log(`>> [${response.config.requestId}] Nhận response thành công, status: ${response.status}`);

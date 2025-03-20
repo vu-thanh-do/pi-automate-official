@@ -2,8 +2,8 @@ const axios = require("axios");
 async function getArticleId() {
   console.log(">> Đang lấy article ID ngẫu nhiên từ trang chủ");
   const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0"); // Tháng (0-11) cần +1 và pad thành 2 chữ số
-  const day = String(now.getDate()).padStart(2, "0"); // Ngày hiện tại dạng 2 chữ số
+  const month = String(now.getMonth() + 1).padStart(2, "0"); 
+  const day = String(now.getDate()).padStart(2, "0"); 
   const timeParam = `${month}${day}0420`;
   try {
     const url = `https://pivoice.app/vjson/home/list/index/0_1?time=${timeParam}`;
@@ -31,14 +31,14 @@ async function getArticleId() {
           listResponse.data
         )}`
       );
-      return 58203589; // Giá trị mặc định nếu không tìm thấy bài viết
+      return 58203589; 
     }
 
     const articles = listResponse.data.data.home_1 || [];
 
     if (articles.length === 0) {
       console.log(`❌ Danh sách bài viết trống.`);
-      return 58203589; // Giá trị mặc định nếu danh sách bài viết trống
+      return 58203589; 
     }
 
     const article = articles[Math.floor(Math.random() * articles.length)];
@@ -48,7 +48,7 @@ async function getArticleId() {
       console.log(
         `❌ Bài viết không có ID. Bài viết: ${JSON.stringify(article)}`
       );
-      return 58203589; // Giá trị mặc định nếu bài viết không có ID
+      return 58203589; 
     }
 
     console.log(`>> Sử dụng article ID: ${article.id}`);
@@ -62,7 +62,7 @@ async function getArticleId() {
     }
 
     console.log(">> Sử dụng article ID mặc định: 58203589");
-    return 58203589; // Giá trị mặc định trong trường hợp lỗi
+    return 58203589; 
   }
 }
 

@@ -4,12 +4,10 @@ const apiClient = require('../api/apiClient');
 const qs = require("qs");
 const getUserPosts = require("../services/getPostUser");
 
-// Hàm tạm dừng thực thi
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Hàm cập nhật và hiển thị trạng thái tiến độ
 function updateProgressStatus(total, success, fail, processing) {
   const completed = success + fail;
   const percent = total > 0 ? Math.floor((completed / total) * 100) : 0;
@@ -21,7 +19,6 @@ function updateProgressStatus(total, success, fail, processing) {
   console.log(`-----------------------------------------\n`);
 }
 
-// Hàm chọn ngẫu nhiên n user từ danh sách
 function getRandomUsers(users, n) {
   const shuffled = [...users].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, n);
@@ -76,34 +73,27 @@ async function handleLikeEachOther(req) {
 
     console.log(`>> Tìm thấy ${userObjects.length} users để like, ${listUserId.length} users cần được like`);
     
-    // Tạo mảng các promises cho tất cả task like
     const allLikePromises = [];
-    const usedUsersForPost = new Map(); // Theo dõi user đã like cho mỗi bài viết
+    const usedUsersForPost = new Map(); 
 
-    // Xử lý từng user trong listUserId
     for (const [targetUserIndex, targetUserId] of listUserId.entries()) {
       console.log(`\n>> Đang xử lý user ${targetUserIndex + 1}/${listUserId.length}: ${targetUserId}`);
       
-      // Tạo user object cho user cần lấy bài viết
       const targetUser = {
         uid: targetUserId,
-        piname: targetUserId, // Sử dụng ID làm piname tạm thời
-        ukey: "", // Không cần ukey vì chỉ lấy bài viết
-        userAgent: userObjects[0].userAgent, // Sử dụng userAgent từ user đầu tiên
-        proxy: userObjects[0].proxy // Sử dụng proxy từ user đầu tiên
+        piname: targetUserId, 
+        ukey: "", 
+        userAgent: userObjects[0].userAgent, 
+        proxy: userObjects[0].proxy 
       };
       
-      // Lấy danh sách bài viết của user
       const userPosts = await getUserPosts(targetUser);
       console.log(`>> Tìm thấy ${userPosts.length} bài viết của user ${targetUserId}`);
 
-      // Lấy số bài viết cần like (countLikeEachOther bài gần nhất)
       const postsToLike = userPosts.slice(0, countLikeEachOther);
       console.log(`>> Sẽ like ${postsToLike.length} bài viết gần nhất`);
 
-      // Xử lý từng bài viết
       for (const [postIndex, postId] of postsToLike.entries()) {
-        // Chọn 3 user ngẫu nhiên để like bài viết
         const availableUsers = userObjects.filter(u => 
           !usedUsersForPost.get(postId)?.includes(u.uid)
         );
@@ -116,7 +106,6 @@ async function handleLikeEachOther(req) {
         const selectedUsers = getRandomUsers(availableUsers, 3);
         usedUsersForPost.set(postId, selectedUsers.map(u => u.uid));
 
-        // Tạo promises cho việc like từ mỗi user
         for (const [likeUserIndex, likeUser] of selectedUsers.entries()) {
           const likePromise = (async () => {
             console.log(`\n>> Bắt đầu like bài ${postId} của user ${targetUserId} bởi ${likeUser.piname}`);

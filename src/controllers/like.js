@@ -4,12 +4,10 @@ const getArticleId = require("../services/getArticleId");
 const path = require("path");
 const qs = require('qs');
 
-// Hàm tạm dừng thực thi để tránh request quá nhanh
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Hàm cập nhật và hiển thị trạng thái tiến độ theo thời gian thực
 function updateProgressStatus(total, success, fail, processing) {
   const completed = success + fail;
   const percent = total > 0 ? Math.floor((completed / total) * 100) : 0;
@@ -28,21 +26,17 @@ async function handleLike(req) {
 
     if (likeCount <= 0) return { success: true, message: "Không cần like" };
 
-    // Khởi tạo Excel Reader Service với đường dẫn file
     const excelFilePath = path.join(__dirname, "../data/PI.xlsx");
     const excelReader = new ExcelReaderService(excelFilePath);
     
-    // Đọc tất cả dữ liệu từ file Excel
     const excelData = excelReader.readAllSheets();
     
-    // Truy cập dữ liệu từ các sheet
     const uid = excelData["prxageng"]["uid"] || [];
     const piname = excelData["prxageng"]["piname"] || [];
     const proxy = excelData["prxageng"]["proxy"] || [];
     const ukey = excelData["prxageng"]["ukey"] || [];
     const userAgent = excelData["prxageng"]["user_agent"] || [];
 
-    // Tạo mảng đối tượng user có thông tin đầy đủ
     const userObjects = uid.map((user, index) => {
       const newProxy = proxy[index].split(":");
       return {
@@ -59,7 +53,6 @@ async function handleLike(req) {
       };
     });
 
-    // Kiểm tra dữ liệu user trước khi tiếp tục
     if (userObjects.length === 0) {
       return {
         success: false,
@@ -69,11 +62,9 @@ async function handleLike(req) {
 
     console.log(`>> Tìm thấy ${userObjects.length} users`);
     
-    // Lấy trước một danh sách các bài viết để đảm bảo có đủ bài viết khác nhau
     console.log(`>> Đang tải danh sách bài viết để like...`);
-    const articleIds = new Set(); // Sử dụng Set để lưu trữ các ID độc nhất
+    const articleIds = new Set(); 
     
-    // Lấy likeCount * 2 bài viết để đảm bảo có đủ (trường hợp có lỗi)
     const requiredCount = likeCount * 2;
     let retries = 0;
     
@@ -88,27 +79,23 @@ async function handleLike(req) {
         console.log(`❌ Lỗi khi lấy article ID: ${error.message}`);
       }
       
-      // Tạm dừng một chút để tránh gửi quá nhiều request
       await sleep(300);
       
-      // Nếu không lấy được đủ bài viết sau nhiều lần thử, tăng biến đếm
       if (articleIds.size < Math.min(retries + 1, requiredCount)) {
         retries++;
       }
     }
     
-    // Chuyển đổi Set thành mảng để dễ dàng sử dụng
     const availableArticleIds = Array.from(articleIds);
     
     if (availableArticleIds.length === 0) {
       console.log(`❌ Không thể lấy được bài viết nào để like. Sử dụng ID mặc định.`);
-      availableArticleIds.push(58203589); // Thêm ID mặc định nếu không lấy được bài nào
+      availableArticleIds.push(58203589); 
     }
     
     console.log(`>> Đã chuẩn bị ${availableArticleIds.length} bài viết khác nhau để like`);
     console.log(`>> Bắt đầu thực hiện like...`);
     
-    // Tạo mảng các promises cho tất cả task like
     const allLikePromises = [];
     
     for (const [userIndex, user] of userObjects.entries()) {
@@ -116,44 +103,36 @@ async function handleLike(req) {
       
       const api = apiClient(user);
       
-      // Theo dõi các bài viết đã được like bởi user này
       const likedByThisUser = new Set();
       
-      // Tạo các promises cho mỗi like của user hiện tại
       for (let i = 0; i < likeCount; i++) {
-        // Tạo một promise cho mỗi like và thêm vào mảng
         const likePromise = (async () => {
           console.log(`\n>> Bắt đầu like với user ${user.piname} - Task ${i + 1}/${likeCount}`);
           
-          // Chọn một bài viết chưa được like bởi user này
           let articleId;
           let attempts = 0;
           const maxAttempts = 5;
           
-          // Tìm bài viết chưa được like
           while (attempts < maxAttempts) {
-            // Chọn một ID ngẫu nhiên từ danh sách
             const randomIndex = Math.floor(Math.random() * availableArticleIds.length);
             const candidateId = availableArticleIds[randomIndex];
             
-            // Kiểm tra xem bài viết này đã được like chưa
             if (!likedByThisUser.has(candidateId)) {
               articleId = candidateId;
-              likedByThisUser.add(articleId); // Đánh dấu bài viết đã like
+              likedByThisUser.add(articleId); 
               console.log(`>> Đã chọn bài viết ID ${articleId} cho user ${user.piname}`);
               break;
             }
             
             attempts++;
             
-            // Nếu không tìm được bài chưa like, thử lấy bài mới
             if (attempts === maxAttempts - 1) {
               try {
                 const newId = await getArticleId();
                 if (newId && !likedByThisUser.has(newId)) {
                   articleId = newId;
-                  availableArticleIds.push(newId); // Thêm vào danh sách
-                  likedByThisUser.add(articleId); // Đánh dấu bài viết đã like
+                  availableArticleIds.push(newId); 
+                  likedByThisUser.add(articleId); 
                   console.log(`>> Lấy thêm bài viết mới ID ${articleId} cho user ${user.piname}`);
                   break;
                 }
@@ -163,17 +142,14 @@ async function handleLike(req) {
             }
           }
           
-          // Nếu không tìm được bài chưa like, sử dụng ID mặc định
           if (!articleId) {
             articleId = 58203589;
             console.log(`❌ Không tìm được bài viết chưa like, sử dụng ID mặc định: ${articleId}`);
           }
           
-          // Thiết lập số lần thử lại tối đa
           const maxRetries = 2;
           let retryCount = 0;
           
-          // Mảng các biến thể URL để thử
           const urlVariants = ['/vapi', '/vapi/', 'vapi'];
           let currentUrlVariantIndex = 0;
           
@@ -181,7 +157,6 @@ async function handleLike(req) {
             try {
               if (retryCount > 0) {
                 console.log(`>> Thử lại lần ${retryCount}/${maxRetries} cho like với user ${user.piname}`);
-                // Đợi trước khi thử lại
                 await sleep(3000 * retryCount);
               }
               
@@ -195,24 +170,19 @@ async function handleLike(req) {
                 selected_chain: 0,
               });
               
-              // Sử dụng biến thể URL hiện tại
               const currentUrl = urlVariants[currentUrlVariantIndex];
               
-              // Thực hiện gọi API
               console.log(`>> [Task ${userIndex+1}-${i+1}] Like bài viết ID: ${articleId} với user ${user.piname}`);
               const response = await api.post(currentUrl, payload);
               
-              // Log chi tiết response để debug
               console.log(`>> [Task ${userIndex+1}-${i+1}] Status code: ${response.status}`);
               
-              // Kiểm tra kết quả - giả định thành công nếu có response data
               if (response.data && response.data.hasOwnProperty('data')) {
                 console.log(`✅ [Task ${userIndex+1}-${i+1}] User ${user.piname} đã like bài viết ${articleId} thành công!`);
                 return { success: true, articleId };
               } else {
                 console.log(`⚠️ [Task ${userIndex+1}-${i+1}] User ${user.piname} like bài viết ${articleId} không thành công:`, response.data);
                 
-                // Đánh dấu bài viết là đã thử like (để tránh thử lại trong các lần khác)
                 if (response.data && response.data.message && (
                     response.data.message.includes("đã like") || 
                     response.data.message.includes("already") ||
@@ -226,20 +196,17 @@ async function handleLike(req) {
             } catch (error) {
               console.error(`❌ [Task ${userIndex+1}-${i+1}] Lỗi khi like bài viết ${articleId} với user ${user.piname}:`, error.message);
               
-              // Log chi tiết lỗi để debug
               if (error.response) {
                 console.error(`Mã lỗi: ${error.response.status}`);
                 console.error(`URL gọi: ${error.config?.url}`);
                 console.error(`URL đầy đủ: ${error.config?.baseURL}${error.config?.url}`);
                 console.error(`Phương thức: ${error.config?.method.toUpperCase()}`);
                 
-                // Thử lại nếu gặp lỗi 404, 429 hoặc 5xx
                 if ([404, 429, 500, 502, 503, 504].includes(error.response.status)) {
                   retryCount++;
                   if (retryCount <= maxRetries) {
                     console.log(`>> [Task ${userIndex+1}-${i+1}] Sẽ thử lại sau ${3 * retryCount} giây...`);
                     
-                    // Nếu gặp lỗi 404, thử URL biến thể khác
                     if (error.response.status === 404) {
                       console.error(`❗️ [Task ${userIndex+1}-${i+1}] Lỗi 404: URL không tồn tại, kiểm tra lại endpoint`);
                       currentUrlVariantIndex = (currentUrlVariantIndex + 1) % urlVariants.length;
@@ -256,14 +223,11 @@ async function handleLike(req) {
             }
           }
           
-          // Nếu vòng lặp kết thúc mà không return, xem như thất bại
           return { success: false, articleId };
         })();
         
         allLikePromises.push(likePromise);
         
-        // Thêm một khoảng delay ngẫu nhiên giữa việc khởi tạo các promises
-        // để tránh gửi quá nhiều requests cùng một lúc
         await sleep(300 + Math.floor(Math.random() * 300));
       }
     }
@@ -271,15 +235,12 @@ async function handleLike(req) {
     const totalTasks = allLikePromises.length;
     console.log(`>> Tổng số ${totalTasks} like đang được xử lý đồng thời...`);
     
-    // Khởi tạo bảng để theo dõi trạng thái tiến độ
     let progressSuccessCount = 0;
     let progressFailCount = 0;
-    let uniqueArticlesLiked = new Set(); // Theo dõi số lượng bài viết độc nhất đã like
+    let uniqueArticlesLiked = new Set(); 
     
-    // Hiển thị trạng thái ban đầu
     updateProgressStatus(totalTasks, progressSuccessCount, progressFailCount, totalTasks);
     
-    // Thiết lập interval để cập nhật tiến độ mỗi 3 giây
     const progressInterval = setInterval(() => {
       updateProgressStatus(
         totalTasks, 
@@ -289,7 +250,6 @@ async function handleLike(req) {
       );
     }, 3000);
     
-    // Xử lý các promises và cập nhật kết quả
     const results = [];
     for (const [index, promise] of allLikePromises.entries()) {
       try {
@@ -309,7 +269,6 @@ async function handleLike(req) {
         results.push({ status: 'rejected', reason: error.message });
       }
       
-      // Cập nhật tiến độ sau mỗi 5 promises hoàn thành
       if ((index + 1) % 5 === 0 || index === allLikePromises.length - 1) {
         updateProgressStatus(
           totalTasks, 
@@ -320,10 +279,8 @@ async function handleLike(req) {
       }
     }
     
-    // Dừng interval cập nhật tiến độ
     clearInterval(progressInterval);
     
-    // Cập nhật trạng thái tiến độ cuối cùng
     updateProgressStatus(totalTasks, progressSuccessCount, progressFailCount, 0);
     
     console.log(`\n>> Kết quả cuối cùng: ${progressSuccessCount} like thành công, ${progressFailCount} like thất bại`);

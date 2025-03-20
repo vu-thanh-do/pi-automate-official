@@ -8,12 +8,10 @@ const {
 const getAllPostPiKnow = require("../services/getAllPostPiKnow");
 const ExcelReaderService = require("../models/excelSheed");
 
-// Hàm tạm dừng thực thi để tránh request quá nhanh
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Hàm cập nhật và hiển thị trạng thái tiến độ theo thời gian thực
 function updateProgressStatus(total, success, fail, processing) {
   const completed = success + fail;
   const percent = total > 0 ? Math.floor((completed / total) * 100) : 0;
@@ -65,30 +63,24 @@ async function handlePiKnow(req) {
       };
     }
 
-    // Lấy danh sách bài PiKnow
     const allPostPiKnow = await getAllPostPiKnow();
     console.log(`>> Tìm thấy ${userObjects.length} users, ${allPostPiKnow.length} bài PiKnow`);
     console.log(`>> Bắt đầu piknow...`);
 
-    // Tạo mảng các promises cho tất cả task piknow
     const allPiKnowPromises = [];
-    const usedIds = new Set(); // Theo dõi các ID đã được sử dụng
+    const usedIds = new Set(); 
 
-    // Tạo các promises để piknow
     for (const [userIndex, user] of userObjects.entries()) {
       console.log(`\n>> Chuẩn bị xử lý user ${userIndex + 1}/${userObjects.length}: ${user.piname}`);
       const api = apiClient(user);
 
       for (let i = 0; i < countPiKnow; i++) {
-        // Tạo một promise cho việc piknow
         const piknowPromise = (async () => {
           console.log(`\n>> Bắt đầu piknow cho user ${user.piname} - Task ${i + 1}/${countPiKnow}`);
           
-          // Thiết lập số lần thử lại tối đa
           const maxRetries = 2;
           let retryCount = 0;
           
-          // Mảng các biến thể URL để thử
           const urlVariants = ['/vapi', '/vapi/', 'vapi'];
           let currentUrlVariantIndex = 0;
           
@@ -99,10 +91,8 @@ async function handlePiKnow(req) {
                 await sleep(3000 * retryCount);
               }
 
-              // Lấy ID ngẫu nhiên từ danh sách bài PiKnow
               let availableIds = allPostPiKnow.filter(id => !usedIds.has(id));
               if (availableIds.length === 0) {
-                // Nếu đã dùng hết ID, reset lại danh sách
                 usedIds.clear();
                 availableIds = allPostPiKnow;
               }
@@ -111,7 +101,6 @@ async function handlePiKnow(req) {
               const selectedId = availableIds[randomIndex];
               usedIds.add(selectedId);
 
-              // Chọn message ngẫu nhiên từ danh sách piknow
               const randomMessage = piknow[Math.floor(Math.random() * piknow.length)];
               
               const payload = qs.stringify({
@@ -125,17 +114,13 @@ async function handlePiKnow(req) {
                 selected_chain: 0,
               });
               
-              // Sử dụng biến thể URL hiện tại
               const currentUrl = urlVariants[currentUrlVariantIndex];
               
-              // Thực hiện gọi API
               console.log(`>> [Task ${userIndex+1}-${i+1}] Piknow bài ID: ${selectedId} của user ${user.piname}`);
               const response = await api.post(currentUrl, payload);
               
-              // Log chi tiết response để debug
               console.log(`>> [Task ${userIndex+1}-${i+1}] Status code: ${response.status}`);
               
-              // Kiểm tra kết quả - thành công nếu có response data và time
               if (response.data && response.data.time) {
                 console.log(`✅ [Task ${userIndex+1}-${i+1}] Đã piknow thành công bài ID ${selectedId} của user ${user.piname}`);
                 return { success: true, postId: selectedId };
@@ -178,7 +163,6 @@ async function handlePiKnow(req) {
         
         allPiKnowPromises.push(piknowPromise);
         
-        // Thêm delay ngẫu nhiên giữa các requests
         await sleep(300 + Math.floor(Math.random() * 300));
       }
     }
@@ -198,15 +182,12 @@ async function handlePiKnow(req) {
       };
     }
     
-    // Khởi tạo bảng theo dõi tiến độ
     let progressSuccessCount = 0;
     let progressFailCount = 0;
     let piknowedPostIds = [];
     
-    // Hiển thị trạng thái ban đầu
     updateProgressStatus(totalTasks, progressSuccessCount, progressFailCount, totalTasks);
     
-    // Thiết lập interval cập nhật tiến độ
     const progressInterval = setInterval(() => {
       updateProgressStatus(
         totalTasks, 
@@ -216,7 +197,6 @@ async function handlePiKnow(req) {
       );
     }, 3000);
     
-    // Xử lý các promises và cập nhật kết quả
     const results = [];
     for (const [index, promise] of allPiKnowPromises.entries()) {
       try {
@@ -236,7 +216,6 @@ async function handlePiKnow(req) {
         results.push({ status: 'rejected', reason: error.message });
       }
       
-      // Cập nhật tiến độ sau mỗi 5 promises
       if ((index + 1) % 5 === 0 || index === allPiKnowPromises.length - 1) {
         updateProgressStatus(
           totalTasks, 
@@ -247,10 +226,8 @@ async function handlePiKnow(req) {
       }
     }
     
-    // Dừng interval cập nhật tiến độ
     clearInterval(progressInterval);
     
-    // Cập nhật trạng thái tiến độ cuối cùng
     updateProgressStatus(totalTasks, progressSuccessCount, progressFailCount, 0);
     
     console.log(`\n>> Kết quả cuối cùng: ${progressSuccessCount} bài piknow thành công, ${progressFailCount} bài thất bại`);

@@ -30,9 +30,7 @@ async function getAllPostIds(user) {
       data: `action=SPEAKER-INFO&component=speaker&speaker_id=${user.uid}&vid=${user.uid}&english_version=0&selected_country=1&selected_chain=0`
     });
     
-    // Kiểm tra dữ liệu trả về và trích xuất danh sách bài đăng
     if (response.data && response.data.article && Array.isArray(response.data.article)) {
-      // Trả về mảng các id
       return response.data.article.map(post => post.id);
     }
     return [];
