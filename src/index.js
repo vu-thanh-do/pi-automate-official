@@ -6,6 +6,7 @@ const { handleLike } = require('./controllers/like');
 const {  handlePostArticles } = require('./controllers/posts');
 const path = require('path');
 const handleDelete = require('./controllers/delete');
+const { handlePiKnow } = require('./controllers/piKnow');
 
 const app = express();
 app.use(express.static('public'));
@@ -20,14 +21,14 @@ app.get('/', (req, res) => res.render('index'));
 // Xử lý tất cả tác vụ song song
 app.post('/execute-tasks', async (req, res) => {
     try {
-        const { commentCount, likeCount,deleteCount, postCount } = req.body;
+        const { commentCount, likeCount,deleteCount, postCount, piKnow } = req.body;
         let tasks = [];
         console.log(commentCount, likeCount, postCount)
         if (commentCount > 0) tasks.push(handleComment(commentCount));
         if (likeCount > 0) tasks.push(handleLike(likeCount));
          if (deleteCount > 0) tasks.push(handleDelete(deleteCount));
         if (postCount > 0) tasks.push(handlePostArticles(postCount));
-
+        if (piKnow > 0) tasks.push(handlePiKnow(piKnow));
         // Chạy tất cả tác vụ song song, không chờ từng cái một
         const results = await Promise.allSettled(tasks);
         console.log(results)
