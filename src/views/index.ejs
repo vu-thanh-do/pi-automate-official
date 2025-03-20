@@ -124,6 +124,10 @@
         <h1>Social Management Tool</h1>
         <form id="socialForm">
             <div class="form-group">
+                <label for="login">Đăng nhập vào tài khoản (0 là không đăng nhập)</label>
+                <input type="number" id="login" value="0" min="0">
+            </div>
+            <div class="form-group">
                 <label for="commentCount">Số Lần Comment Home (0 là không comment)</label>
                 <input type="number" id="commentCount" value="0" min="0">
             </div>
@@ -164,7 +168,8 @@
                 deleteCount: parseInt(document.getElementById('deleteCount').value),
                 postCount: parseInt(document.getElementById('postCount').value),
                 piKnow: parseInt(document.getElementById('piKnow').value),
-                likeEachOther: parseInt(document.getElementById('likeEachOther').value)
+                likeEachOther: parseInt(document.getElementById('likeEachOther').value),
+                login: parseInt(document.getElementById('login').value)
             };
 
             fetch('/execute-tasks', {
