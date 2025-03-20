@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
             --error-color: #f72585;
             --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         * {
             margin: 0;
             padding: 0;
@@ -116,6 +118,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Social Management Tool</h1>
@@ -124,23 +127,24 @@
                 <label for="commentCount">Số Lần Comment Home (0 là không comment)</label>
                 <input type="number" id="commentCount" value="0" min="0">
             </div>
-            
+
             <div class="form-group">
                 <label for="likeCount">Số Lần Like Home (0 là không like)</label>
                 <input type="number" id="likeCount" value="0" min="0">
             </div>
-
-       
-
             <div class="form-group">
                 <label for="postCount">Số bài muốn đăng (0 là không đăng)</label>
                 <input type="number" id="postCount" value="0" min="0">
             </div>
-             <div class="form-group">
-                <label for="piKnow">Số bài muốn like và comments PiKnow (0 là không like và comment)</label>
+            <div class="form-group">
+                <label for="piKnow">Số bài muốn  comments PiKnow (0 là không  comment)</label>
                 <input type="number" id="piKnow" value="0" min="0">
             </div>
-     <div class="form-group">
+            <div class="form-group">
+                <label for="likeEachOther">Số lần muốn like chéo nhau (0 là không like)</label>
+                <input type="number" id="likeEachOther" value="0" min="0">
+            </div>
+            <div class="form-group">
                 <label for="deleteCount">Số Bài muốn xoá (0 là không xoá)</label>
                 <input type="number" id="deleteCount" value="0" min="0">
             </div>
@@ -153,13 +157,14 @@
     <script>
         document.getElementById('socialForm').addEventListener('submit', function (event) {
             event.preventDefault();
-            
+
             const data = {
                 commentCount: parseInt(document.getElementById('commentCount').value),
                 likeCount: parseInt(document.getElementById('likeCount').value),
                 deleteCount: parseInt(document.getElementById('deleteCount').value),
                 postCount: parseInt(document.getElementById('postCount').value),
-                piKnow: parseInt(document.getElementById('piKnow').value)
+                piKnow: parseInt(document.getElementById('piKnow').value),
+                likeEachOther: parseInt(document.getElementById('likeEachOther').value)
             };
 
             fetch('/execute-tasks', {
@@ -167,14 +172,15 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(res => res.json())
-            .then(response => {
-                const messageBox = document.getElementById('responseMessage');
-                messageBox.textContent = response.message;
-                messageBox.className = response.success ? 'message success' : 'message error';
-            })
-            .catch(err => console.error("Lỗi gửi request:", err));
+                .then(res => res.json())
+                .then(response => {
+                    const messageBox = document.getElementById('responseMessage');
+                    messageBox.textContent = response.message;
+                    messageBox.className = response.success ? 'message success' : 'message error';
+                })
+                .catch(err => console.error("Lỗi gửi request:", err));
         });
     </script>
 </body>
+
 </html>
