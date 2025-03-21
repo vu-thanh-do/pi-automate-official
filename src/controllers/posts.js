@@ -643,26 +643,24 @@ function updateProgressStatus(total, success, fail, processing) {
   console.log(`------------------------------------------\n`);
 }
 
-// Hàm tách từ trong câu
+
 function splitIntoWords(text) {
   return text.split(/\s+/).filter(word => word.length > 0);
 }
 
-// Hàm tách câu thành các cụm từ
 function splitIntoPhrases(text) {
   return text.split(/[,.!?;]/)
     .map(chunk => chunk.trim())
     .filter(chunk => chunk.length > 0);
 }
 
-// Hàm lấy ngẫu nhiên một phần tử từ mảng
+
 function getRandomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-// Hàm tạo nội dung theo nhiều cách khác nhau
 function generateMixedContent(sourceTexts, minParts = 2, maxParts = 4) {
-  // Tạo các pool khác nhau từ nguồn
+
   const wordPool = sourceTexts.reduce((acc, text) => {
     if (text) {
       acc.push(...splitIntoWords(text));
@@ -677,25 +675,24 @@ function generateMixedContent(sourceTexts, minParts = 2, maxParts = 4) {
     return acc;
   }, []);
 
-  // Chọn ngẫu nhiên cách kết hợp
   const mixingStyle = Math.floor(Math.random() * 4);
   const parts = [];
   const numParts = Math.floor(Math.random() * (maxParts - minParts + 1)) + minParts;
 
   switch (mixingStyle) {
-    case 0: // Kết hợp các câu hoàn chỉnh
+    case 0: 
       for (let i = 0; i < numParts; i++) {
         parts.push(getRandomElement(phrasePool));
       }
       return parts.join(', ');
 
-    case 1: // Kết hợp từ đơn lẻ
+    case 1: 
       for (let i = 0; i < numParts + 2; i++) {
         parts.push(getRandomElement(wordPool));
       }
       return parts.join(' ');
 
-    case 2: // Kết hợp cả câu và từ đơn
+    case 2: 
       for (let i = 0; i < numParts; i++) {
         if (Math.random() > 0.5) {
           parts.push(getRandomElement(phrasePool));
@@ -710,7 +707,7 @@ function generateMixedContent(sourceTexts, minParts = 2, maxParts = 4) {
       }
       return parts.join(', ');
 
-    case 3: // Kết hợp phức tạp
+    case 3: 
       const mainPhrase = getRandomElement(phrasePool);
       const words = [];
       for (let i = 0; i < 2; i++) {
@@ -720,15 +717,13 @@ function generateMixedContent(sourceTexts, minParts = 2, maxParts = 4) {
   }
 }
 
-// Hàm tạo tiêu đề độc đáo
+
 function generateUniqueTitle(titles) {
   const title = generateMixedContent(titles, 2, 3);
-  // Thêm timestamp để đảm bảo độc đáo
-  const timestamp = new Date().getTime();
-  return `${title} #${timestamp % 1000}`;
+  return `${title}`;
 }
 
-// Hàm tạo nội dung độc đáo
+
 function generateUniqueContent(contents) {
   return generateMixedContent(contents, 3, 5);
 }
