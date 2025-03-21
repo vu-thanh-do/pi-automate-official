@@ -20,6 +20,87 @@ function updateProgressStatus(total, success, fail, processing) {
   console.log(`-------------------------------------\n`);
 }
 
+function splitIntoWords(text) {
+  return text.split(/\s+/).filter(word => word.length > 0);
+}
+
+function splitIntoPhrases(text) {
+  return text.split(/[,.!?;]/)
+    .map(chunk => chunk.trim())
+    .filter(chunk => chunk.length > 0);
+}
+
+function getRandomElement(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function generateMixedComment(commentTexts) {
+  const allComments = commentTexts.reduce((acc, text) => {
+    if (text) {
+      const comments = text.split(",").map(c => c.trim());
+      acc.push(...comments);
+    }
+    return acc;
+  }, []);
+
+  const wordPool = allComments.reduce((acc, text) => {
+    if (text) {
+      acc.push(...splitIntoWords(text));
+    }
+    return acc;
+  }, []);
+
+  const phrasePool = allComments.reduce((acc, text) => {
+    if (text) {
+      acc.push(...splitIntoPhrases(text));
+    }
+    return acc;
+  }, []);
+
+  const mixingStyle = Math.floor(Math.random() * 6);
+
+  switch (mixingStyle) {
+    case 0:
+      return getRandomElement(allComments);
+
+    case 1:
+      const numWords = Math.floor(Math.random() * 2) + 3;
+      const words = [];
+      for (let i = 0; i < numWords; i++) {
+        words.push(getRandomElement(wordPool));
+      }
+      return words.join(' ');
+
+    case 2:
+      const phrase = getRandomElement(phrasePool);
+      const word = getRandomElement(wordPool);
+      return `${phrase} ${word}`;
+
+    case 3:
+      const phrases = [
+        getRandomElement(phrasePool),
+        getRandomElement(phrasePool)
+      ];
+      return phrases.join(', ');
+
+    case 4:
+      const firstWord = getRandomElement(wordPool);
+      const middlePhrase = getRandomElement(phrasePool);
+      const lastWord = getRandomElement(wordPool);
+      return `${firstWord} ${middlePhrase} ${lastWord}`;
+
+    case 5:
+      const numParts = Math.floor(Math.random() * 2) + 2;
+      const selectedComments = [];
+      for (let i = 0; i < numParts; i++) {
+        const comment = getRandomElement(allComments);
+        const parts = splitIntoPhrases(comment);
+        selectedComments.push(getRandomElement(parts));
+      }
+      return selectedComments.join(' ');
+  }
+}
+
 async function handleComment(req) {
   const commentCount = req;
   console.log(`>> Yêu cầu gửi ${commentCount} comment`);
@@ -56,31 +137,15 @@ async function handleComment(req) {
 
   const commentTexts = excelData["Sheet1"]["comments"] || [];
 
-  const comments = commentTexts.map((message, index) => {
-    const arrMessage = message.split(",");
-    return {
-      message: arrMessage[Math.floor(Math.random() * arrMessage.length)],
-    };
-  });
-
-  if (
-    proxies.length === 0 ||
-    userObjects.length === 0 ||
-    comments.length === 0
-  ) {
+  if (commentTexts.length === 0) {
     return {
       success: false,
-      message: "Thiếu dữ liệu cần thiết từ file Excel",
-      missing: {
-        proxies: proxies.length === 0,
-        users: userObjects.length === 0,
-        comments: comments.length === 0,
-      },
+      message: "Không tìm thấy dữ liệu comments từ file Excel",
     };
   }
 
   console.log(
-    `Tìm thấy ${userObjects.length} users, ${proxies.length} proxies, ${comments.length} comments`
+    `Tìm thấy ${userObjects.length} users, ${proxies.length} proxies, ${commentTexts.length} comments`
   );
 
   let successCount = 0;
@@ -96,8 +161,6 @@ async function handleComment(req) {
     const api = apiClient(user);
     
     for (let i = 0; i < commentCount; i++) {
-      const message = comments[Math.floor(Math.random() * comments.length)].message;
-      
       const commentPromise = (async () => {
         console.log(`\n>> Bắt đầu comment với user ${user.piname} - Task ${i + 1}/${commentCount}`);
         
@@ -122,6 +185,9 @@ async function handleComment(req) {
               console.log(`>> Thử lại lần ${retryCount}/${maxRetries} cho comment với user ${user.piname}`);
               await sleep(3000 * retryCount);
             }
+            
+            const message = generateMixedComment(commentTexts);
+            console.log(`>> Nội dung comment được tạo: "${message}"`);
             
             const payload = qs.stringify({
               action: 'send',

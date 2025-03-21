@@ -23,6 +23,69 @@ function updateProgressStatus(total, success, fail, processing) {
   console.log(`-----------------------------------------\n`);
 }
 
+function splitIntoWords(text) {
+  return text.split(/\s+/).filter(word => word.length > 0);
+}
+
+function splitIntoPhrases(text) {
+  return text.split(/[,.!?;]/)
+    .map(chunk => chunk.trim())
+    .filter(chunk => chunk.length > 0);
+}
+
+function getRandomElement(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function generateMixedPiKnowMessage(piknowMessages) {
+  const wordPool = piknowMessages.reduce((acc, text) => {
+    if (text) {
+      acc.push(...splitIntoWords(text));
+    }
+    return acc;
+  }, []);
+
+  const phrasePool = piknowMessages.reduce((acc, text) => {
+    if (text) {
+      acc.push(...splitIntoPhrases(text));
+    }
+    return acc;
+  }, []);
+
+  const mixingStyle = Math.floor(Math.random() * 5);
+
+  switch (mixingStyle) {
+    case 0:
+      return getRandomElement(piknowMessages);
+
+    case 1:
+      const numWords = Math.floor(Math.random() * 2) + 2;
+      const words = [];
+      for (let i = 0; i < numWords; i++) {
+        words.push(getRandomElement(wordPool));
+      }
+      return words.join(' ');
+
+    case 2:
+      const phrase = getRandomElement(phrasePool);
+      const word = getRandomElement(wordPool);
+      return `${phrase} ${word}`;
+
+    case 3:
+      const phrases = [
+        getRandomElement(phrasePool),
+        getRandomElement(phrasePool)
+      ];
+      return phrases.join(', ');
+
+    case 4:
+      const firstWord = getRandomElement(wordPool);
+      const middlePhrase = getRandomElement(phrasePool);
+      const lastWord = getRandomElement(wordPool);
+      return `${firstWord} ${middlePhrase} ${lastWord}`;
+  }
+}
+
 async function handlePiKnow(req) {
   try {
     const countPiKnow = req;
@@ -101,7 +164,8 @@ async function handlePiKnow(req) {
               const selectedId = availableIds[randomIndex];
               usedIds.add(selectedId);
 
-              const randomMessage = piknow[Math.floor(Math.random() * piknow.length)];
+              const randomMessage = generateMixedPiKnowMessage(piknow);
+              console.log(`>> Nội dung piknow được tạo: "${randomMessage}"`);
               
               const payload = qs.stringify({
                 component: "know",
