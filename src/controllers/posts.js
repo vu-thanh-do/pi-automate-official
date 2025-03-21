@@ -40,7 +40,7 @@ async function handlePostArticles(req) {
     const userAgent = excelData["prxageng"]["user_agent"] || [];
     const titles = excelData["title"]["titles"] || [];
     const contents = excelData["title"]["contents"] || [];
-
+    
     const userObjects = uid.map((user, index) => {
       const newProxy = proxy[index].split(":");
       return {
@@ -86,9 +86,10 @@ async function handlePostArticles(req) {
           console.log(`\n>> Bắt đầu đăng bài với user ${user.piname} - Task ${i + 1}/${postCount}`);
           
           const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-          const randomContent = contents[Math.floor(Math.random() * contents.length)];
+          const randomContentFilter = contents.filter((t) => t != null && t != '');
+          const randomContent = randomContentFilter[Math.floor(Math.random() * randomContentFilter.length)];
           
-          const uniqueTitle = `${randomTitle} #${Date.now().toString().slice(-4)}${Math.floor(Math.random() * 1000)}`;
+          const uniqueTitle = randomTitle;
           
           console.log(`>> Đang lấy ảnh cho bài viết từ service...`);
           let imageUrl;
