@@ -25,7 +25,7 @@ async function handleLike(req) {
     console.log(`>> Yêu cầu thực hiện ${likeCount} like`);
 
     if (likeCount <= 0) return { success: true, message: "Không cần like" };
-
+    
     const excelFilePath = path.join(__dirname, "../data/PI.xlsx");
     const excelReader = new ExcelReaderService(excelFilePath);
     
