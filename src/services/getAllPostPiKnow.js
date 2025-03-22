@@ -1,7 +1,7 @@
 const axios = require("axios");
 
-async function getAllPostPiKnow() {
-  console.log(">> Đang lấy article ID từ trang chủ PiKnow");
+async function getAllPostPiKnow(user) {
+  console.log(`>> Đang lấy article ID từ trang chủ PiKnow cho user ${user.piname}`);
 
   try {
     const response = await axios({
@@ -11,7 +11,7 @@ async function getAllPostPiKnow() {
         'accept': '*/*',
         'accept-language': 'vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5',
         'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'cookie': 'uid=1792378; ukey=XEDCBCFPMP38BXD3BH3EBRDCFBCMAG; piname=hh56y93',
+        'cookie': `uid=${user.uid}; ukey=${user.ukey}; piname=${user.piname}`,
         'origin': 'https://pivoice.app',
         'priority': 'u=1, i',
         'referer': 'https://pivoice.app/',
@@ -21,10 +21,10 @@ async function getAllPostPiKnow() {
         'sec-fetch-dest': 'empty',
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+        'user-agent': user.userAgent,
         'x-requested-with': 'XMLHttpRequest'
       },
-      data: 'component=know&action=get-list&search=&user_name=hh56y93&english_version=0&selected_country=1&selected_chain=0'
+      data: `component=know&action=get-list&search=&user_name=${user.piname}&english_version=0&selected_country=1&selected_chain=0`
     });
     if (
       response.data &&
@@ -33,11 +33,19 @@ async function getAllPostPiKnow() {
       Array.isArray(response.data.data.data)
     ) {
       const ids = response.data.data.data.map(item => item.id);
+      console.log(`✅ Đã lấy được ${ids.length} bài PiKnow cho user ${user.piname}`);
       return ids;
     }
+    console.log(`⚠️ Không tìm thấy bài PiKnow nào cho user ${user.piname}`);
     return [];
   } catch (error) {
-    console.error("Lỗi khi lấy post PiKnow:", error);
+    console.error(`❌ Lỗi khi lấy post PiKnow cho user ${user.piname}:`, error.message);
+    if (error.response) {
+      console.error(`Mã lỗi: ${error.response.status}`);
+      console.error(`URL gọi: ${error.config?.url}`);
+      console.error(`URL đầy đủ: ${error.config?.baseURL}${error.config?.url}`);
+      console.error(`Phương thức: ${error.config?.method.toUpperCase()}`);
+    }
     return [];
   }
 }
