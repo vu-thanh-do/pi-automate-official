@@ -9,9 +9,12 @@ const handleDelete = require('./src/controllers/delete');
 const { handlePiKnow } = require('./src/controllers/piKnow');
 const handleLikeEachOther = require('./src/controllers/likeEachOther');
 const handleLogin = require('./src/controllers/login');
+const { startRotation, stopRotation, rotationProgress } = require('./src/controllers/rotation');
 
 let mainWindow;
 let logWindow;
+let isSequentialRunning = false;
+let shouldStopSequential = false;
 
 // Khởi tạo Express server
 const server = express();
@@ -92,6 +95,54 @@ server.post('/execute-tasks', async (req, res) => {
     }
 });
 
+// Thêm endpoint mới cho chế độ tuần tự
+server.post('/execute-sequential', async (req, res) => {
+    try {
+        if (isSequentialRunning) {
+            return res.json({
+                success: false,
+                message: "Đã có tiến trình đang chạy"
+            });
+        }
+
+        const { delayBetweenUsers, actionsPerUser, retryCount } = req.body;
+        console.log(`Bắt đầu chế độ tuần tự với ${delayBetweenUsers}s delay, ${actionsPerUser} actions/user, ${retryCount} lần retry`);
+
+        isSequentialRunning = true;
+        shouldStopSequential = false;
+
+      
+    } catch (error) {
+        console.error('Lỗi:', error.message);
+        isSequentialRunning = false;
+        res.json({ 
+            success: false, 
+            message: "Lỗi khi thực hiện chế độ tuần tự", 
+            error: error.message 
+        });
+    }
+});
+
+// Endpoint để dừng tiến trình tuần tự
+server.post('/stop-sequential', (req, res) => {
+    if (!isSequentialRunning) {
+        return res.json({
+            success: false,
+            message: "Không có tiến trình nào đang chạy"
+        });
+    }
+
+    shouldStopSequential = true;
+    res.json({
+        success: true,
+        message: "Đã gửi yêu cầu dừng tiến trình"
+    });
+});
+
+// Routes cho chế độ luân phiên
+server.post('/start-rotation', startRotation);
+server.post('/stop-rotation', stopRotation);
+server.get('/rotation-progress', rotationProgress); 
 // Khởi động server Express
 const expressServer = server.listen(0, () => {
     const port = expressServer.address().port;
@@ -128,8 +179,16 @@ function startElectron(port) {
             }
         });
 
-        mainWindow.loadFile('src/views/index.html');
-        mainWindow.webContents.executeJavaScript(`window.SERVER_PORT = ${port};`);
+        // Thay đổi trang khởi động mặc định thành mode-select.html
+        mainWindow.loadFile('src/views/mode-select.html');
+        
+        // Đợi cho đến khi trang load xong mới inject biến SERVER_PORT
+        mainWindow.webContents.on('did-finish-load', () => {
+            mainWindow.webContents.executeJavaScript(`
+                window.SERVER_PORT = ${port};
+                localStorage.setItem('SERVER_PORT', ${port});
+            `);
+        });
 
         mainWindow.on('closed', () => {
             mainWindow = null;

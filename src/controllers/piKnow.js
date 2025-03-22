@@ -14,7 +14,7 @@ function sleep(ms) {
 }
 
 class TaskQueue {
-  constructor(concurrencyLimit = 100) {
+  constructor(concurrencyLimit = 10000) {
     this.concurrencyLimit = concurrencyLimit;
     this.runningTasks = 0;
     this.queue = [];

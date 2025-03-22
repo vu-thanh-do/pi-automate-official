@@ -128,11 +128,42 @@
         .loading.active {
             display: block;
         }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .nav-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PI Automate Tool</h1>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="goBack()">← Quay Lại</button>
+            <button class="nav-btn" onclick="switchMode()">Chuyển Chế Độ</button>
+        </div>
+
+        <h1>PI Automate Tool - Chế Độ Thủ Công</h1>
         <form id="socialForm">
             <div class="form-group">
                 <label for="login">Đăng nhập vào tài khoản (0 là không đăng nhập)</label>
@@ -170,6 +201,33 @@
     </div>
 
     <script>
+        // Thêm các hàm điều hướng
+        function goBack() {
+            const form = document.getElementById('socialForm');
+            const submitBtn = document.querySelector('.submit-btn');
+            
+            if (!submitBtn.disabled) {
+                window.location.href = 'mode-select.html';
+            } else {
+                if (confirm('Tiến trình đang chạy. Bạn có chắc muốn quay lại không?')) {
+                    window.location.href = 'mode-select.html';
+                }
+            }
+        }
+
+        function switchMode() {
+            const form = document.getElementById('socialForm');
+            const submitBtn = document.querySelector('.submit-btn');
+            
+            if (!submitBtn.disabled) {
+                window.location.href = 'sequential.html';
+            } else {
+                if (confirm('Tiến trình đang chạy. Bạn có chắc muốn chuyển chế độ không?')) {
+                    window.location.href = 'sequential.html';
+                }
+            }
+        }
+
         document.getElementById('socialForm').addEventListener('submit', async function (event) {
             event.preventDefault();
 
@@ -193,7 +251,12 @@
             };
 
             try {
-                const port = window.SERVER_PORT;
+                // Lấy port từ window hoặc localStorage
+                const port = window.SERVER_PORT || localStorage.getItem('SERVER_PORT');
+                if (!port) {
+                    throw new Error('Không thể kết nối với server. Vui lòng khởi động lại ứng dụng.');
+                }
+
                 const response = await fetch(`http://localhost:${port}/execute-tasks`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

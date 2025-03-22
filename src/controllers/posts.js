@@ -10,7 +10,7 @@ function sleep(ms) {
 }
 
 class TaskQueue {
-  constructor(concurrencyLimit = 100) {
+  constructor(concurrencyLimit = 10000) {
     this.concurrencyLimit = concurrencyLimit;
     this.runningTasks = 0;
     this.queue = [];
@@ -309,14 +309,28 @@ async function handlePostArticles(req) {
     let createdArticleIds = [];
     
     const allTasks = [];
+    console.log('\n>> Danh sách users sẽ được xử lý:');
+    userObjects.forEach((user, idx) => {
+      console.log(`>> [${idx + 1}/${userObjects.length}] User: ${user.piname} (${user.uid})`);
+    });
+    console.log('\n');
+
+    // Xử lý lần lượt từng user
     for (const [userIndex, user] of userObjects.entries()) {
+      console.log(`\n==========================================`);
+      console.log(`>> ĐANG XỬ LÝ USER THỨ ${userIndex + 1}/${userObjects.length}`);
+      console.log(`>> User: ${user.piname} (${user.uid})`);
+      console.log(`==========================================\n`);
+      
       const api = apiClient(user);
       
+      // Tạo các tasks cho user hiện tại
+      const userTasks = [];
       for (let i = 0; i < postCount; i++) {
-        allTasks.push({
+        userTasks.push({
           userId: user.uid,
           task: async () => {
-            console.log(`\n>> Bắt đầu đăng bài với user ${user.piname} - Task ${i + 1}/${postCount}`);
+            console.log(`\n>> [USER ${userIndex + 1}/${userObjects.length}] ${user.piname} - Đăng bài ${i + 1}/${postCount}`);
             
             const finalTitle = generateUniqueTitle(titles);
             const uniqueContent = generateUniqueContent(contents);
@@ -420,15 +434,11 @@ async function handlePostArticles(req) {
           }
         });
       }
-    }
 
-    for (let i = allTasks.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allTasks[i], allTasks[j]] = [allTasks[j], allTasks[i]];
-    }
-
-    for (const { userId, task } of allTasks) {
-      await taskQueue.add(task, userId);
+      // Bỏ phần xáo trộn ngẫu nhiên tasks
+      for (const { userId, task } of userTasks) {
+        await taskQueue.add(task, userId);
+      }
     }
 
     console.log(`>> Tổng số ${allTasks.length} bài viết đã được thêm vào hàng đợi...`);
